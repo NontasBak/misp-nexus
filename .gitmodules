@@ -1,0 +1,6 @@
+[submodule "misp-docker"]
+	path = misp-docker
+	url = git@github.com:MISP/misp-docker.git
+[submodule "MISP"]
+	path = MISP
+	url = git@github.com:MISP/MISP.git
