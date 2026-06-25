@@ -1,0 +1,16 @@
+include:
+  - path: ./misp-docker/docker-compose.yml
+    env_file: ./misp-docker/.env
+
+services:
+  nexus-nginx:
+    image: nginx:1.27-alpine
+    restart: always
+    depends_on:
+      misp-core:
+        condition: service_healthy
+    ports:
+      - "${NEXUS_HTTP_PORT:-80}:80"
+    volumes:
+      - "./frontend/dist:/usr/share/nginx/html:ro"
+      - "./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro"

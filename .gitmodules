@@ -4,3 +4,6 @@
 [submodule "MISP"]
 	path = MISP
 	url = git@github.com:MISP/MISP.git
+[submodule "PyMISP"]
+	path = PyMISP
+	url = git@github.com:MISP/PyMISP.git
