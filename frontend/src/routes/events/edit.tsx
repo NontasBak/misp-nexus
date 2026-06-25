@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useForm } from "@tanstack/react-form"
 import { Link, createRoute, useNavigate } from "@tanstack/react-router"
 import { AlertCircleIcon, SaveIcon } from "lucide-react"
@@ -30,11 +30,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import {
-  addEvent,
   analysisLabels,
   distributionLabels,
+  editEvent,
+  getEvent,
   threatLevelLabels,
   type AddEventInput,
 } from "@/lib/misp"
@@ -42,58 +44,100 @@ import { Route as rootRoute } from "@/routes/__root"
 
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/events/add",
-  component: AddEventPage,
+  path: "/events/edit/$eventId",
+  component: EventEditPage,
 })
-
-const today = new Date().toISOString().slice(0, 10)
 
 function getFieldError(field: { state: { meta: { errors: Array<unknown> } } }) {
   const firstError = field.state.meta.errors[0]
   return typeof firstError === "string" ? firstError : undefined
 }
 
-function AddEventPage() {
+function EventEditPage() {
+  const { eventId } = Route.useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
-  const addEventMutation = useMutation({
-    mutationFn: addEvent,
-    onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: ["events"] })
-      const createdId = result.Event?.id ?? result.id
-      toast.success("Event created")
+  const eventQuery = useQuery({
+    queryKey: ["event", eventId],
+    queryFn: () => getEvent(eventId),
+  })
 
-      if (createdId) {
-        await navigate({ to: "/events/view/$eventId", params: { eventId: createdId } })
-      } else {
-        navigate({ to: "/" })
-      }
+  const editMutation = useMutation({
+    mutationFn: (values: AddEventInput) => editEvent(eventId, values),
+    onSuccess: async () => {
+      toast.success("Event updated")
+      await queryClient.invalidateQueries({ queryKey: ["event", eventId] })
+      await queryClient.invalidateQueries({ queryKey: ["events"] })
+      await navigate({ to: "/events/view/$eventId", params: { eventId } })
     },
   })
 
+  if (eventQuery.isLoading) {
+    return <Skeleton className="h-80 w-full" />
+  }
+
+  if (eventQuery.isError || !eventQuery.data) {
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Unable to load event</AlertTitle>
+        <AlertDescription>
+          {eventQuery.error instanceof Error
+            ? eventQuery.error.message
+            : "MISP did not return the event."}
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  return (
+    <EventEditForm
+      event={eventQuery.data.Event}
+      eventId={eventId}
+      isPending={editMutation.isPending}
+      error={editMutation.error}
+      onSubmit={(values) => editMutation.mutateAsync(values)}
+    />
+  )
+}
+
+function EventEditForm({
+  event,
+  eventId,
+  isPending,
+  error,
+  onSubmit,
+}: {
+  event: Awaited<ReturnType<typeof getEvent>>["Event"]
+  eventId: string
+  isPending: boolean
+  error: unknown
+  onSubmit: (values: AddEventInput) => Promise<unknown>
+}) {
   const form = useForm({
     defaultValues: {
-      info: "",
-      date: today,
-      distribution: "1",
-      threat_level_id: "4",
-      analysis: "0",
-      sharing_group_id: "",
+      info: event.info ?? "",
+      date: event.date ?? "",
+      distribution: event.distribution ?? "1",
+      threat_level_id: event.threat_level_id ?? "4",
+      analysis: event.analysis ?? "0",
+      sharing_group_id: event.sharing_group_id ?? "",
     } satisfies AddEventInput,
     onSubmit: async ({ value }) => {
-      await addEventMutation.mutateAsync(value)
+      await onSubmit(value)
     },
   })
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Add Event</CardTitle>
-        <CardDescription>Create a new MISP event.</CardDescription>
+        <CardTitle>Edit Event {event.id}</CardTitle>
+        <CardDescription>Update core event metadata.</CardDescription>
         <CardAction>
           <Button variant="outline" size="sm" asChild>
-            <Link to="/">Back to events</Link>
+            <Link to="/events/view/$eventId" params={{ eventId }}>
+              Back to event
+            </Link>
           </Button>
         </CardAction>
       </CardHeader>
@@ -107,14 +151,14 @@ function AddEventPage() {
           }}
         >
           <FieldGroup>
-            {addEventMutation.isError ? (
+            {error ? (
               <Alert variant="destructive">
                 <AlertCircleIcon />
-                <AlertTitle>Unable to create event</AlertTitle>
+                <AlertTitle>Unable to update event</AlertTitle>
                 <AlertDescription>
-                  {addEventMutation.error instanceof Error
-                    ? addEventMutation.error.message
-                    : "MISP rejected the event."}
+                  {error instanceof Error
+                    ? error.message
+                    : "MISP rejected the event update."}
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -127,25 +171,23 @@ function AddEventPage() {
               }}
             >
               {(field) => {
-                const error = getFieldError(field)
+                const fieldError = getFieldError(field)
                 return (
-                  <Field data-invalid={Boolean(error)}>
+                  <Field data-invalid={Boolean(fieldError)}>
                     <FieldLabel htmlFor={field.name}>Info</FieldLabel>
                     <Textarea
                       id={field.name}
-                      name={field.name}
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(event) =>
                         field.handleChange(event.target.value)
                       }
-                      aria-invalid={Boolean(error)}
-                      placeholder="Short event description"
+                      aria-invalid={Boolean(fieldError)}
                     />
                     <FieldDescription>
-                      This is the only required field in MISP.
+                      Mirrors the legacy event edit form.
                     </FieldDescription>
-                    <FieldError>{error}</FieldError>
+                    <FieldError>{fieldError}</FieldError>
                   </Field>
                 )
               }}
@@ -158,7 +200,6 @@ function AddEventPage() {
                     <FieldLabel htmlFor={field.name}>Date</FieldLabel>
                     <Input
                       id={field.name}
-                      name={field.name}
                       type="date"
                       value={field.state.value}
                       onBlur={field.handleBlur}
@@ -188,7 +229,7 @@ function AddEventPage() {
                               <SelectItem key={value} value={value}>
                                 {label}
                               </SelectItem>
-                            )
+                            ),
                           )}
                         </SelectGroup>
                       </SelectContent>
@@ -215,7 +256,7 @@ function AddEventPage() {
                               <SelectItem key={value} value={value}>
                                 {label}
                               </SelectItem>
-                            )
+                            ),
                           )}
                         </SelectGroup>
                       </SelectContent>
@@ -242,7 +283,7 @@ function AddEventPage() {
                               <SelectItem key={value} value={value}>
                                 {label}
                               </SelectItem>
-                            )
+                            ),
                           )}
                         </SelectGroup>
                       </SelectContent>
@@ -258,39 +299,24 @@ function AddEventPage() {
                   <FieldLabel htmlFor={field.name}>Sharing Group ID</FieldLabel>
                   <Input
                     id={field.name}
-                    name={field.name}
-                    inputMode="numeric"
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={(event) => field.handleChange(event.target.value)}
-                    placeholder="Required when distribution is Sharing group"
                   />
                 </Field>
               )}
             </form.Field>
 
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" asChild>
-                <Link to="/">Cancel</Link>
-              </Button>
-              <form.Subscribe
-                selector={(state) => [state.canSubmit, state.isSubmitting]}
-              >
-                {([canSubmit, isSubmitting]) => (
-                  <Button
-                    type="submit"
-                    disabled={
-                      !canSubmit ||
-                      isSubmitting ||
-                      addEventMutation.isPending
-                    }
-                  >
-                    <SaveIcon data-icon="inline-start" />
-                    {addEventMutation.isPending ? "Saving" : "Save"}
-                  </Button>
-                )}
-              </form.Subscribe>
-            </div>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
+              {([canSubmit, isSubmitting]) => (
+                <Button type="submit" disabled={!canSubmit || isSubmitting || isPending}>
+                  <SaveIcon data-icon="inline-start" />
+                  {isPending ? "Saving..." : "Save Event"}
+                </Button>
+              )}
+            </form.Subscribe>
           </FieldGroup>
         </form>
       </CardContent>

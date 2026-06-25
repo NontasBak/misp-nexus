@@ -7,10 +7,19 @@ import {
   useLocation,
   useNavigate,
 } from "@tanstack/react-router"
-import { LogOutIcon } from "lucide-react"
+import { ChevronDownIcon, LogOutIcon } from "lucide-react"
 import type { QueryClient } from "@tanstack/react-query"
 
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { getCurrentUser, logoutSession, type MispCurrentUser } from "@/lib/misp"
 
 export const currentUserQueryOptions = () =>
@@ -58,21 +67,51 @@ function RootLayout() {
 
   return (
     <div className="min-h-svh bg-background text-foreground">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-          <Link to="/" className="min-w-0 text-sm font-semibold tracking-normal">
-            MISP Nexus
-          </Link>
-          <div className="flex shrink-0 items-center gap-3">
-            <nav className="flex shrink-0 items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/">Events</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link to="/events/add">Add Event</Link>
-              </Button>
+      <header className="border-b border-neutral-800 bg-neutral-950 text-neutral-100">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2">
+          <div className="flex min-w-0 items-center gap-4">
+            <Link to="/" className="min-w-0 text-sm font-semibold tracking-normal">
+              MISP Nexus
+            </Link>
+            <nav className="hidden items-center gap-1 md:flex">
+              <NavMenu
+                label="Event Actions"
+                items={[
+                  { to: "/", label: "List Events" },
+                  { to: "/events/add", label: "Add Event" },
+                  { to: "/attributes", label: "List Attributes" },
+                  { to: "/objects", label: "List Objects" },
+                  { disabled: true, label: "Search Attributes" },
+                  { disabled: true, label: "List Tags" },
+                  { disabled: true, label: "Analyst Data" },
+                ]}
+              />
+              <NavMenu
+                label="Galaxies"
+                items={[
+                  { to: "/galaxies", label: "List Galaxies" },
+                  { disabled: true, label: "Attach Cluster" },
+                ]}
+              />
+              <NavMenu
+                label="Taxonomies"
+                items={[
+                  { to: "/taxonomies", label: "List Taxonomies" },
+                  { disabled: true, label: "Taxonomy Tags" },
+                ]}
+              />
+              <NavMenu
+                label="Global Actions"
+                items={[
+                  { disabled: true, label: "Dashboard" },
+                  { disabled: true, label: "My Profile" },
+                  { disabled: true, label: "Automation" },
+                ]}
+              />
             </nav>
-            <div className="hidden text-xs text-muted-foreground md:block">
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            <div className="hidden text-xs text-neutral-400 md:block">
               {userQuery.data?.User.email ?? ""}
             </div>
             <LogoutButton />
@@ -102,6 +141,7 @@ function LogoutButton() {
     <Button
       variant="outline"
       size="sm"
+      className="border-neutral-700 bg-neutral-900 text-neutral-100 hover:bg-neutral-800"
       onClick={() => logoutMutation.mutate()}
       disabled={logoutMutation.isPending}
     >
@@ -113,4 +153,40 @@ function LogoutButton() {
 
 export function getCurrentUserFromCache(queryClient: QueryClient) {
   return queryClient.getQueryData<MispCurrentUser>(["auth", "current-user"])
+}
+
+type NavItem = {
+  label: string
+  to?: string
+  disabled?: boolean
+}
+
+function NavMenu({ label, items }: { label: string; items: NavItem[] }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-neutral-200 outline-none hover:bg-neutral-800 focus-visible:bg-neutral-800">
+          {label}
+          <ChevronDownIcon className="size-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56">
+        <DropdownMenuLabel>{label}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          {items.map((item) =>
+            item.to ? (
+              <DropdownMenuItem key={item.label} asChild>
+                <Link to={item.to}>{item.label}</Link>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem key={item.label} disabled={item.disabled}>
+                {item.label}
+              </DropdownMenuItem>
+            )
+          )}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 }

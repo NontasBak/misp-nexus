@@ -2,6 +2,7 @@ export type MispOrg = {
   id?: string
   name?: string
   uuid?: string
+  local?: boolean
 }
 
 export type MispCurrentUser = {
@@ -46,6 +47,52 @@ export type MispEventIndexItem = {
   }>
 }
 
+export type MispAttribute = {
+  id: string
+  event_id: string
+  category: string
+  type: string
+  value: string
+  to_ids?: boolean
+  comment?: string
+  uuid?: string
+  distribution?: string
+  sharing_group_id?: string
+  deleted?: boolean
+  disable_correlation?: boolean
+  first_seen?: string | null
+  last_seen?: string | null
+  timestamp?: string
+  object_id?: string
+  object_relation?: string | null
+  Event?: Pick<MispEventIndexItem, "id" | "info" | "date">
+}
+
+export type MispObject = {
+  id: string
+  event_id: string
+  name?: string
+  "meta-category"?: string
+  description?: string
+  distribution?: string
+  sharing_group_id?: string
+  template_uuid?: string
+  template_version?: string
+  timestamp?: string
+  deleted?: boolean
+  Attribute?: MispAttribute[]
+}
+
+export type MispEvent = {
+  Event: MispEventIndexItem & {
+    Attribute?: MispAttribute[]
+    Object?: MispObject[]
+    Galaxy?: Array<Record<string, unknown>>
+    EventReport?: Array<Record<string, unknown>>
+    CryptographicKey?: Array<Record<string, unknown>>
+  }
+}
+
 export type EventIndexFilters = {
   eventinfo?: string
   published?: string
@@ -62,10 +109,92 @@ export type AddEventInput = {
   sharing_group_id: string
 }
 
+export type AttributeFormInput = {
+  category: string
+  type: string
+  value: string
+  to_ids: boolean
+  comment: string
+}
+
+export type MispTaxonomyListItem = {
+  Taxonomy: {
+    id: string
+    namespace: string
+    description: string
+    version: string
+    enabled: boolean
+    exclusive?: boolean
+    required?: boolean
+    highlighted?: boolean
+  }
+  total_count?: number
+  current_count?: number
+}
+
+export type MispTaxonomy = {
+  Taxonomy: MispTaxonomyListItem["Taxonomy"]
+  entries?: Array<{
+    tag: string
+    expanded?: string
+    description?: string
+    colour?: string
+    existing_tag?: {
+      Tag?: {
+        id?: string
+        name?: string
+        colour?: string
+      }
+    }
+  }>
+}
+
+export type MispGalaxyListItem = {
+  Galaxy: {
+    id: string
+    uuid?: string
+    name: string
+    type?: string
+    description?: string
+    version?: string
+    icon?: string
+    namespace?: string
+    enabled?: boolean
+    local_only?: boolean
+    default?: boolean
+    distribution?: string
+  }
+}
+
+export type MispGalaxy = {
+  Galaxy: MispGalaxyListItem["Galaxy"]
+  Org?: MispOrg
+  Orgc?: MispOrg
+  GalaxyCluster?: Array<{
+    id: string
+    value: string
+    tag_name?: string
+    description?: string
+    type?: string
+    GalaxyElement?: Array<{
+      key: string
+      value: string
+    }>
+  }>
+}
+
 type ApiErrorBody = {
   name?: string
   message?: string
   errors?: unknown
+}
+
+type ToggleResponse = {
+  saved?: boolean
+  success?: boolean
+  message?: string
+  name?: string
+  id?: string
 }
 
 export class MispAuthError extends Error {
@@ -99,7 +228,32 @@ export const distributionLabels: Record<string, string> = {
   "2": "Connected communities",
   "3": "All communities",
   "4": "Sharing group",
+  "5": "Inherited",
 }
+
+export const attributeCategories = [
+  "Network activity",
+  "Payload delivery",
+  "Artifacts dropped",
+  "Persistence mechanism",
+  "Payload installation",
+  "External analysis",
+  "Financial fraud",
+  "Support Tool",
+] as const
+
+export const commonAttributeTypes = [
+  "ip-src",
+  "ip-dst",
+  "domain",
+  "hostname",
+  "url",
+  "md5",
+  "sha1",
+  "sha256",
+  "email-src",
+  "email-dst",
+] as const
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const text = await response.text()
@@ -111,13 +265,28 @@ async function parseResponse<T>(response: Response): Promise<T> {
       errorBody?.message ||
       errorBody?.name ||
       `MISP returned ${response.status} ${response.statusText}`
+
     if (response.status === 401 || response.status === 403) {
       throw new MispAuthError(detail, response.status)
     }
+
     throw new Error(detail)
   }
 
   return body as T
+}
+
+async function fetchJson<T>(path: string, init?: RequestInit) {
+  const response = await fetch(`${apiBase}${path}`, {
+    credentials: "same-origin",
+    ...init,
+    headers: {
+      Accept: "application/json",
+      ...(init?.headers ?? {}),
+    },
+  })
+
+  return parseResponse<T>(response)
 }
 
 function parseLoginTokenFields(html: string) {
@@ -152,14 +321,7 @@ function parseLoginTokenFields(html: string) {
 }
 
 export async function getCurrentUser() {
-  const response = await fetch(`${apiBase}/users/view/me`, {
-    credentials: "same-origin",
-    headers: {
-      Accept: "application/json",
-    },
-  })
-
-  return parseResponse<MispCurrentUser>(response)
+  return fetchJson<MispCurrentUser>("/users/view/me")
 }
 
 export async function loginWithSession(credentials: {
@@ -195,9 +357,7 @@ export async function loginWithSession(credentials: {
       body: body.toString(),
     })
   } catch {
-    // MISP responds to successful login with a redirect to the legacy UI.
-    // We intentionally stop the redirect chain here and validate the session
-    // with a JSON request below.
+    // A successful login redirects into the legacy UI.
   }
 
   try {
@@ -217,7 +377,7 @@ export async function logoutSession() {
       redirect: "error",
     })
   } catch {
-    // Successful logout also redirects to the legacy login page.
+    // A successful logout redirects into the legacy login page.
   }
 }
 
@@ -246,6 +406,10 @@ export async function listEvents(filters: EventIndexFilters = {}) {
   return { events, count }
 }
 
+export async function getEvent(eventId: string) {
+  return fetchJson<MispEvent>(`/events/view/${eventId}`)
+}
+
 export async function addEvent(values: AddEventInput) {
   const event: Record<string, string> = {
     info: values.info.trim(),
@@ -259,17 +423,209 @@ export async function addEvent(values: AddEventInput) {
     event.sharing_group_id = values.sharing_group_id.trim()
   }
 
-  const response = await fetch(`${apiBase}/events/add`, {
-    method: "POST",
-    credentials: "same-origin",
+  return fetchJson<{ Event?: MispEventIndexItem } & MispEventIndexItem>(
+    "/events/add",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ Event: event }),
+    }
+  )
+}
+
+export async function editEvent(eventId: string, values: AddEventInput) {
+  const event: Record<string, string> = {
+    info: values.info.trim(),
+    date: values.date,
+    distribution: values.distribution,
+    threat_level_id: values.threat_level_id,
+    analysis: values.analysis,
+  }
+
+  if (values.distribution === "4" && values.sharing_group_id.trim()) {
+    event.sharing_group_id = values.sharing_group_id.trim()
+  }
+
+  return fetchJson<MispEvent>(`/events/edit/${eventId}`, {
+    method: "PUT",
     headers: {
-      Accept: "application/json",
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ Event: event }),
   })
+}
 
-  return parseResponse<{ Event?: MispEventIndexItem } & MispEventIndexItem>(
-    response
+export async function deleteEvent(eventId: string) {
+  return fetchJson<ToggleResponse>(`/events/delete/${eventId}`, {
+    method: "DELETE",
+  })
+}
+
+export async function listAttributes(eventId?: string) {
+  const payload: Record<string, string | number> = {
+    returnFormat: "json",
+    limit: 100,
+    page: 1,
+  }
+
+  if (eventId) {
+    payload.eventid = eventId
+  }
+
+  const data = await fetchJson<{ response?: { Attribute?: MispAttribute[] } }>(
+    "/attributes/restSearch",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
   )
+
+  return data.response?.Attribute ?? []
+}
+
+export async function getAttribute(attributeId: string) {
+  return fetchJson<{ Attribute: MispAttribute }>(`/attributes/view/${attributeId}`)
+}
+
+export async function addAttribute(
+  eventId: string,
+  values: AttributeFormInput
+) {
+  return fetchJson<{ Attribute: MispAttribute }>(`/attributes/add/${eventId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      Attribute: {
+        category: values.category,
+        type: values.type,
+        value: values.value.trim(),
+        to_ids: values.to_ids,
+        comment: values.comment.trim(),
+      },
+    }),
+  })
+}
+
+export async function editAttribute(
+  attributeId: string,
+  values: AttributeFormInput
+) {
+  return fetchJson<{ Attribute: MispAttribute }>(
+    `/attributes/edit/${attributeId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        Attribute: {
+          category: values.category,
+          type: values.type,
+          value: values.value.trim(),
+          to_ids: values.to_ids,
+          comment: values.comment.trim(),
+        },
+      }),
+    }
+  )
+}
+
+export async function deleteAttribute(attributeId: string) {
+  return fetchJson<ToggleResponse>(`/attributes/delete/${attributeId}`, {
+    method: "DELETE",
+  })
+}
+
+export async function listObjects(eventId?: string) {
+  const payload: Record<string, string | number> = {
+    returnFormat: "json",
+    limit: 100,
+    page: 1,
+  }
+
+  if (eventId) {
+    payload.eventid = eventId
+  }
+
+  const data = await fetchJson<{ response?: Array<{ Object: MispObject }> }>(
+    "/objects/restsearch",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  )
+
+  return (data.response ?? []).map((item) => item.Object)
+}
+
+export async function getObject(objectId: string) {
+  return fetchJson<{ Object: MispObject; Attribute?: MispAttribute[] }>(
+    `/objects/view/${objectId}`
+  )
+}
+
+export async function deleteObject(objectId: string) {
+  return fetchJson<ToggleResponse>(`/objects/delete/${objectId}/0`, {
+    method: "DELETE",
+  })
+}
+
+export async function getObjectTemplate(templateId: string) {
+  return fetchJson<Record<string, unknown>>(`/objectTemplates/view/${templateId}`)
+}
+
+export async function listTaxonomies() {
+  return fetchJson<MispTaxonomyListItem[]>("/taxonomies")
+}
+
+export async function getTaxonomy(taxonomyId: string) {
+  return fetchJson<MispTaxonomy>(`/taxonomies/view/${taxonomyId}`)
+}
+
+export async function enableTaxonomy(taxonomyId: string) {
+  return fetchJson<ToggleResponse>(`/taxonomies/enable/${taxonomyId}`, {
+    method: "POST",
+  })
+}
+
+export async function disableTaxonomy(taxonomyId: string) {
+  return fetchJson<ToggleResponse>(`/taxonomies/disable/${taxonomyId}`, {
+    method: "POST",
+  })
+}
+
+export async function updateTaxonomies() {
+  return fetchJson<ToggleResponse>("/taxonomies/update", {
+    method: "POST",
+  })
+}
+
+export async function listGalaxies() {
+  return fetchJson<MispGalaxyListItem[]>("/galaxies")
+}
+
+export async function getGalaxy(galaxyId: string) {
+  return fetchJson<MispGalaxy>(`/galaxies/view/${galaxyId}`)
+}
+
+export async function deleteGalaxy(galaxyId: string) {
+  return fetchJson<ToggleResponse>(`/galaxies/delete/${galaxyId}`, {
+    method: "DELETE",
+  })
+}
+
+export async function updateGalaxies() {
+  return fetchJson<ToggleResponse>("/galaxies/update", {
+    method: "POST",
+  })
 }

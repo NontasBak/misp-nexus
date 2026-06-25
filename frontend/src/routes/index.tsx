@@ -67,7 +67,7 @@ const columns: Array<ColumnDef<MispEventIndexItem>> = [
     accessorKey: "id",
     header: "ID",
     cell: ({ row }) => (
-      <a className="font-medium underline-offset-4 hover:underline" href={`/misp/events/view/${row.original.id}`}>
+      <a className="font-medium underline-offset-4 hover:underline" href={`/events/view/${row.original.id}`}>
         {row.original.id}
       </a>
     ),
@@ -126,7 +126,7 @@ const columns: Array<ColumnDef<MispEventIndexItem>> = [
     header: "",
     cell: ({ row }) => (
       <Button variant="outline" size="sm" asChild>
-        <a href={`/misp/events/view/${row.original.id}`}>View</a>
+        <a href={`/events/view/${row.original.id}`}>View</a>
       </Button>
     ),
   },
