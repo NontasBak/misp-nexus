@@ -12,8 +12,12 @@ Rgarding the endpoints on the frontend, try to mirror the ones on the legacy UI.
 
 ## Authentication
 
-For authentication on the app you will use the default misp session cookies and NOT the API key. You can make requests using the API key on the terminal (using curl) using the API key to test various endpoints, but you'll use the session cookies on the actual app. The API key you can use is `ANo7vFPDAxIs0HxbvSuAW9UDCzrsKER3wF0ng3L2`. CSRF tokens should not be required when making json requests.
+For authentication on the app you will use the default misp session cookies and NOT the API key. You can make requests using the API key on the terminal (using curl) using the API key to test various endpoints, but you'll use the session cookies on the actual app. The API key you can use is `ANo7vFPDAxIs0HxbvSuAW9UDCzrsKER3wF0ng3L2` (ONLY for `curl` requests, do not use it in the actual app). CSRF tokens are not required when making json requests.
 
 ## Documentation
 
 For help regarding the documented API endpoints, you can check `MISP/app/webroot/doc/openapi.yaml` and the PyMISP implementation at `MISP/PyMISP`. There are way more API endpoints on the source code at `MISP/` which you can look for, they are just not documented. The API documentation might also not be 100% accurate, so use `curl` to verify them.
+
+## Design
+
+Use tailwind v4, shadcn, shadcn mcp server (if available), shadcn skill, tanstack table (with shadcn) and tanstack query. Keep the UI minimal.
