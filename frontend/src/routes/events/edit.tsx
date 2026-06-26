@@ -229,7 +229,7 @@ function EventEditForm({
                               <SelectItem key={value} value={value}>
                                 {label}
                               </SelectItem>
-                            ),
+                            )
                           )}
                         </SelectGroup>
                       </SelectContent>
@@ -256,7 +256,7 @@ function EventEditForm({
                               <SelectItem key={value} value={value}>
                                 {label}
                               </SelectItem>
-                            ),
+                            )
                           )}
                         </SelectGroup>
                       </SelectContent>
@@ -283,7 +283,7 @@ function EventEditForm({
                               <SelectItem key={value} value={value}>
                                 {label}
                               </SelectItem>
-                            ),
+                            )
                           )}
                         </SelectGroup>
                       </SelectContent>
@@ -311,7 +311,10 @@ function EventEditForm({
               selector={(state) => [state.canSubmit, state.isSubmitting]}
             >
               {([canSubmit, isSubmitting]) => (
-                <Button type="submit" disabled={!canSubmit || isSubmitting || isPending}>
+                <Button
+                  type="submit"
+                  disabled={!canSubmit || isSubmitting || isPending}
+                >
                   <SaveIcon data-icon="inline-start" />
                   {isPending ? "Saving..." : "Save Event"}
                 </Button>

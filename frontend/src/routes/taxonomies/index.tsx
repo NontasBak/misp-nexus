@@ -105,7 +105,9 @@ function TaxonomiesIndexPage() {
                 <TableCell>{taxonomy.Taxonomy.id}</TableCell>
                 <TableCell>{taxonomy.Taxonomy.namespace}</TableCell>
                 <TableCell>{taxonomy.Taxonomy.version}</TableCell>
-                <TableCell>{taxonomy.Taxonomy.enabled ? "Yes" : "No"}</TableCell>
+                <TableCell>
+                  {taxonomy.Taxonomy.enabled ? "Yes" : "No"}
+                </TableCell>
                 <TableCell>
                   {taxonomy.current_count ?? 0} / {taxonomy.total_count ?? 0}
                 </TableCell>

@@ -20,10 +20,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { loginWithSession } from "@/lib/misp"
-import {
-  Route as rootRoute,
-  currentUserQueryOptions,
-} from "@/routes/__root"
+import { Route as rootRoute, currentUserQueryOptions } from "@/routes/__root"
 
 type LoginSearch = {
   redirect?: string

@@ -489,7 +489,9 @@ export async function listAttributes(eventId?: string) {
 }
 
 export async function getAttribute(attributeId: string) {
-  return fetchJson<{ Attribute: MispAttribute }>(`/attributes/view/${attributeId}`)
+  return fetchJson<{ Attribute: MispAttribute }>(
+    `/attributes/view/${attributeId}`
+  )
 }
 
 export async function addAttribute(
@@ -581,7 +583,9 @@ export async function deleteObject(objectId: string) {
 }
 
 export async function getObjectTemplate(templateId: string) {
-  return fetchJson<Record<string, unknown>>(`/objectTemplates/view/${templateId}`)
+  return fetchJson<Record<string, unknown>>(
+    `/objectTemplates/view/${templateId}`
+  )
 }
 
 export async function listTaxonomies() {

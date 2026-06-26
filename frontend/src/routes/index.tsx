@@ -6,7 +6,12 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table"
-import { AlertCircleIcon, PlusIcon, RotateCwIcon, SearchIcon } from "lucide-react"
+import {
+  AlertCircleIcon,
+  PlusIcon,
+  RotateCwIcon,
+  SearchIcon,
+} from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -67,7 +72,10 @@ const columns: Array<ColumnDef<MispEventIndexItem>> = [
     accessorKey: "id",
     header: "ID",
     cell: ({ row }) => (
-      <a className="font-medium underline-offset-4 hover:underline" href={`/events/view/${row.original.id}`}>
+      <a
+        className="font-medium underline-offset-4 hover:underline"
+        href={`/events/view/${row.original.id}`}
+      >
         {row.original.id}
       </a>
     ),
@@ -154,10 +162,16 @@ function EventsIndexPage() {
         <CardHeader>
           <CardTitle>Events</CardTitle>
           <CardDescription>
-            {eventsQuery.data ? `${eventsQuery.data.count} event result(s)` : "MISP event index"}
+            {eventsQuery.data
+              ? `${eventsQuery.data.count} event result(s)`
+              : "MISP event index"}
           </CardDescription>
           <CardAction className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => eventsQuery.refetch()}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => eventsQuery.refetch()}
+            >
               <RotateCwIcon data-icon="inline-start" />
               Refresh
             </Button>

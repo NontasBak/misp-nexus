@@ -1,4 +1,9 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 import {
   Link,
   Outlet,
@@ -30,25 +35,27 @@ export const currentUserQueryOptions = () =>
     retry: false,
   })
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  beforeLoad: async ({ context, location }) => {
-    if (location.pathname === "/login") {
-      return
-    }
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
+  {
+    beforeLoad: async ({ context, location }) => {
+      if (location.pathname === "/login") {
+        return
+      }
 
-    try {
-      await context.queryClient.ensureQueryData(currentUserQueryOptions())
-    } catch {
-      throw redirect({
-        to: "/login",
-        search: {
-          redirect: location.href,
-        },
-      })
-    }
-  },
-  component: RootLayout,
-})
+      try {
+        await context.queryClient.ensureQueryData(currentUserQueryOptions())
+      } catch {
+        throw redirect({
+          to: "/login",
+          search: {
+            redirect: location.href,
+          },
+        })
+      }
+    },
+    component: RootLayout,
+  }
+)
 
 function RootLayout() {
   const location = useLocation()
@@ -70,8 +77,11 @@ function RootLayout() {
       <header className="border-b border-neutral-800 bg-neutral-950 text-neutral-100">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2">
           <div className="flex min-w-0 items-center gap-4">
-            <Link to="/" className="min-w-0 text-sm font-semibold tracking-normal">
-              MISP Nexus
+            <Link
+              to="/"
+              className="min-w-0 text-sm font-semibold tracking-normal"
+            >
+              MISP
             </Link>
             <nav className="hidden items-center gap-1 md:flex">
               <NavMenu

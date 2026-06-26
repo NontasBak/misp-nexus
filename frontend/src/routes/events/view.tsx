@@ -361,7 +361,9 @@ function EventViewPage() {
                       {attribute.value}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={attribute.to_ids ? "default" : "secondary"}>
+                      <Badge
+                        variant={attribute.to_ids ? "default" : "secondary"}
+                      >
                         {attribute.to_ids ? "Yes" : "No"}
                       </Badge>
                     </TableCell>
@@ -451,7 +453,7 @@ function EventViewPage() {
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1 border border-border px-3 py-2 text-sm">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+      <div className="text-xs tracking-wide text-muted-foreground uppercase">
         {label}
       </div>
       <div>{value}</div>

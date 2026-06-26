@@ -72,7 +72,9 @@ function GalaxyViewPage() {
               <Link to="/galaxies">Back to galaxies</Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <a href={`/misp/galaxies/view/${galaxy.Galaxy.id}`}>Legacy View</a>
+              <a href={`/misp/galaxies/view/${galaxy.Galaxy.id}`}>
+                Legacy View
+              </a>
             </Button>
             <Button
               variant="outline"
@@ -82,7 +84,9 @@ function GalaxyViewPage() {
                   deleteMutation.mutate()
                 }
               }}
-              disabled={deleteMutation.isPending || Boolean(galaxy.Galaxy.default)}
+              disabled={
+                deleteMutation.isPending || Boolean(galaxy.Galaxy.default)
+              }
             >
               <Trash2Icon data-icon="inline-start" />
               Delete
@@ -108,7 +112,10 @@ function GalaxyViewPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {(galaxy.GalaxyCluster ?? []).slice(0, 25).map((cluster) => (
-            <div key={cluster.id} className="border border-border px-3 py-2 text-sm">
+            <div
+              key={cluster.id}
+              className="border border-border px-3 py-2 text-sm"
+            >
               <div className="font-medium">{cluster.value}</div>
               <div className="text-muted-foreground">
                 {cluster.description || cluster.tag_name || ""}
@@ -124,7 +131,7 @@ function GalaxyViewPage() {
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1 border border-border px-3 py-2 text-sm">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+      <div className="text-xs tracking-wide text-muted-foreground uppercase">
         {label}
       </div>
       <div>{value}</div>

@@ -79,7 +79,10 @@ function ObjectsIndexPage() {
                   <TableCell>{object["meta-category"] ?? "-"}</TableCell>
                   <TableCell>
                     <Button variant="outline" size="sm" asChild>
-                      <Link to="/objects/view/$objectId" params={{ objectId: object.id }}>
+                      <Link
+                        to="/objects/view/$objectId"
+                        params={{ objectId: object.id }}
+                      >
                         View
                       </Link>
                     </Button>

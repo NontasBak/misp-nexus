@@ -123,9 +123,13 @@ function AttributeEditor({
     onSubmit: async ({ value }) => {
       await editAttribute(attributeId, value)
       toast.success("Attribute updated")
-      await queryClient.invalidateQueries({ queryKey: ["attribute", attributeId] })
+      await queryClient.invalidateQueries({
+        queryKey: ["attribute", attributeId],
+      })
       await queryClient.invalidateQueries({ queryKey: ["attributes"] })
-      await queryClient.invalidateQueries({ queryKey: ["event", attribute.event_id] })
+      await queryClient.invalidateQueries({
+        queryKey: ["event", attribute.event_id],
+      })
     },
   })
 
@@ -139,7 +143,10 @@ function AttributeEditor({
         </CardDescription>
         <CardAction className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
-            <Link to="/events/view/$eventId" params={{ eventId: attribute.event_id }}>
+            <Link
+              to="/events/view/$eventId"
+              params={{ eventId: attribute.event_id }}
+            >
               Back to event
             </Link>
           </Button>

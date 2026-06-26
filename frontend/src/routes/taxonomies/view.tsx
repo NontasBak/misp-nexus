@@ -14,11 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  disableTaxonomy,
-  enableTaxonomy,
-  getTaxonomy,
-} from "@/lib/misp"
+import { disableTaxonomy, enableTaxonomy, getTaxonomy } from "@/lib/misp"
 import { Route as rootRoute } from "@/routes/__root"
 
 export const Route = createRoute({
@@ -40,7 +36,9 @@ function TaxonomyViewPage() {
       enabled ? disableTaxonomy(taxonomyId) : enableTaxonomy(taxonomyId),
     onSuccess: async () => {
       toast.success("Taxonomy updated")
-      await queryClient.invalidateQueries({ queryKey: ["taxonomy", taxonomyId] })
+      await queryClient.invalidateQueries({
+        queryKey: ["taxonomy", taxonomyId],
+      })
       await queryClient.invalidateQueries({ queryKey: ["taxonomies"] })
     },
   })
@@ -77,7 +75,9 @@ function TaxonomyViewPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => toggleMutation.mutate(Boolean(taxonomy.Taxonomy.enabled))}
+              onClick={() =>
+                toggleMutation.mutate(Boolean(taxonomy.Taxonomy.enabled))
+              }
             >
               {taxonomy.Taxonomy.enabled ? "Disable" : "Enable"}
             </Button>
@@ -103,7 +103,10 @@ function TaxonomyViewPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {(taxonomy.entries ?? []).slice(0, 50).map((entry) => (
-            <div key={entry.tag} className="border border-border px-3 py-2 text-sm">
+            <div
+              key={entry.tag}
+              className="border border-border px-3 py-2 text-sm"
+            >
               <div className="font-medium">{entry.tag}</div>
               <div className="text-muted-foreground">
                 {entry.expanded || entry.description || ""}
@@ -128,7 +131,7 @@ function TaxonomyViewPage() {
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1 border border-border px-3 py-2 text-sm">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+      <div className="text-xs tracking-wide text-muted-foreground uppercase">
         {label}
       </div>
       <div>{value}</div>

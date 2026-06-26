@@ -65,7 +65,10 @@ function AddEventPage() {
       toast.success("Event created")
 
       if (createdId) {
-        await navigate({ to: "/events/view/$eventId", params: { eventId: createdId } })
+        await navigate({
+          to: "/events/view/$eventId",
+          params: { eventId: createdId },
+        })
       } else {
         navigate({ to: "/" })
       }
@@ -280,9 +283,7 @@ function AddEventPage() {
                   <Button
                     type="submit"
                     disabled={
-                      !canSubmit ||
-                      isSubmitting ||
-                      addEventMutation.isPending
+                      !canSubmit || isSubmitting || addEventMutation.isPending
                     }
                   >
                     <SaveIcon data-icon="inline-start" />
