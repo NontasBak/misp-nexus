@@ -2,24 +2,34 @@
 
 Rebuilding the MISP UI with React + Vite.
 
-## Overview
+## Architecture
 
-- Frontend: `http://localhost/`
-- MISP + legacy UI: `http://localhost/misp/`
-- Direct MISP debug ports: `http://localhost:8081/` and `https://localhost:8443/`
+- Local development:
+  - frontend: `http://localhost/`
+  - MISP + legacy UI: `http://localhost/misp/`
+  - direct MISP debug ports: `http://localhost:8081/` and `https://localhost:8443/`
+- Deployment:
+  - frontend: `https://ui.example.com/`
+  - canonical MISP URL: `https://misp.example.com/`
 - Frontend requests should use relative `/misp/...` URLs
 - Authentication uses the standard MISP session cookie
+- MISP should keep its canonical `BASE_URL` on the MISP host, not on `/misp`
 
 ```mermaid
 flowchart TB
     Browser[Browser]
-    Nginx[nexus-nginx]
+    Ui[ui.example.com]
+    Misp[misp.example.com]
+    Peer[peer-misp.example.org]
     Frontend[Frontend build\nReact + Vite]
     Backend[MISP backend + legacy UI]
 
-    Browser --> Nginx
-    Nginx -->|/| Frontend
-    Nginx -->|/misp| Backend
+    Browser --> Ui
+    Browser --> Misp
+    Ui -->|/| Frontend
+    Ui -->|/misp| Backend
+    Misp --> Backend
+    Peer <-->|sync| Misp
 ```
 
 ## Setup
